@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Runner</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1a1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Word Runner">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #1a1a1a;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ── Views ── */
+    .view {
+      width: 100%;
+      max-width: 640px;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn:hover {
+      background: #3a3a3a;
+    }
+
+    .btn-primary {
+      background: #c0392b;
+      border-color: #c0392b;
+    }
+
+    .btn-primary:hover {
+      background: #e74c3c;
+    }
+
+    .btn-small {
+      padding: 6px 14px;
+      font-size: 13px;
+    }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      color: #888;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .btn-icon:hover {
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.1);
+    }
+
+    /* ── Library View ── */
+    #library-view .doc-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .doc-item:hover {
+      border-color: #555;
+    }
+
+    .doc-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-name {
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .doc-meta {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .doc-progress-bar {
+      width: 100%;
+      height: 3px;
+      background: #444;
+      border-radius: 2px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .doc-progress-fill {
+      height: 100%;
+      background: #c0392b;
+      border-radius: 2px;
+      transition: width 0.2s;
+    }
+
+    .empty-state {
+      color: #666;
+      font-size: 15px;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    /* ── Input View ── */
+    #input-view .form-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #input-view label {
+      font-size: 13px;
+      color: #aaa;
+      font-weight: 500;
+    }
+
+    #doc-name-input {
+      width: 100%;
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 15px;
+      outline: none;
+    }
+
+    #doc-name-input:focus {
+      border-color: #666;
+    }
+
+    #text-input {
+      width: 100%;
+      min-height: 200px;
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 15px;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+    }
+
+    #text-input:focus {
+      border-color: #666;
+    }
+
+    .file-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    .file-label {
+      display: inline-block;
+      background: #2a2a2a;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .file-label:hover {
+      background: #3a3a3a;
+    }
+
+    #file-name-display {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .input-actions {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .back-link {
+      color: #888;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    /* ── Reader View ── */
+    #reader-view {
+      gap: 16px;
+      padding-top: 60px;
+    }
+
+    .reader-title {
+      font-size: 16px;
+      color: #555;
+      letter-spacing: 3px;
+    }
+
+    #word-display-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .focal-marker {
+      color: #c0392b;
+      font-size: 10px;
+      line-height: 1;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .focal-marker.top {
+      top: 10px;
+    }
+
+    .focal-marker.bottom {
+      bottom: 10px;
+    }
+
+    #word-display {
+      position: relative;
+      width: 100%;
+      height: 60px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 48px;
+      line-height: 60px;
+    }
+
+    #word-before {
+      position: absolute;
+      right: calc(50% + 0.5ch);
+      text-align: right;
+      white-space: nowrap;
+      color: #ffffff;
+    }
+
+    #word-pivot {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #c0392b;
+      font-weight: bold;
+    }
+
+    #word-after {
+      position: absolute;
+      left: calc(50% + 0.5ch);
+      text-align: left;
+      white-space: nowrap;
+      color: #ffffff;
+    }
+
+    /* ── Progress Bar ── */
+    #progress-container {
+      width: 80%;
+      max-width: 500px;
+      height: 4px;
+      background: #333;
+      border-radius: 2px;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: #c0392b;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    #word-counter {
+      font-size: 12px;
+      color: #666;
+      margin-top: -8px;
+    }
+
+    /* ── Speed Slider ── */
+    #speed-control {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    #speed-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 200px;
+      height: 4px;
+      background: #444;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    #speed-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #speed-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #speed-label {
+      font-size: 14px;
+      color: #aaa;
+      min-width: 70px;
+    }
+
+    /* ── Reader Controls ── */
+    #controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 12px;
+    }
+
+    #play-pause-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #c0392b;
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+
+    #play-pause-btn:hover {
+      background: #e74c3c;
+    }
+
+    .reader-nav {
+      margin-top: 20px;
+    }
+
+    /* ── Loading indicator ── */
+    .loading {
+      color: #888;
+      font-size: 14px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .view {
+        padding: 24px 16px;
+      }
+
+      #word-display {
+        font-size: 36px;
+        line-height: 48px;
+        height: 48px;
+      }
+
+      #word-display-container {
+        height: 90px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LIBRARY VIEW -->
+  <div id="library-view" class="view">
+    <h1>Word Runner</h1>
+    <div id="doc-list" class="doc-list"></div>
+    <button class="btn btn-primary" id="add-new-btn">+ Add New Document</button>
+  </div>
+
+  <!-- INPUT VIEW -->
+  <div id="input-view" class="view hidden">
+    <h1>Word Runner</h1>
+    <div class="form-group">
+      <label for="doc-name-input">Document Name</label>
+      <input type="text" id="doc-name-input" placeholder="My Book">
+    </div>
+    <div class="form-group">
+      <label for="text-input">Paste Text</label>
+      <textarea id="text-input" placeholder="Paste your text here..."></textarea>
+    </div>
+    <div class="file-row">
+      <label for="file-input" class="file-label">Upload .txt or .pdf</label>
+      <input type="file" id="file-input" accept=".txt,.pdf">
+      <span id="file-name-display"></span>
+    </div>
+    <div class="input-actions">
+      <a class="back-link" id="back-to-library-btn">&larr; Library</a>
+      <button class="btn btn-primary" id="save-start-btn">Save &amp; Start Reading</button>
+    </div>
+  </div>
+
+  <!-- READER VIEW -->
+  <div id="reader-view" class="view hidden">
+    <div class="reader-title">WORD RUNNER</div>
+
+    <div id="word-display-container">
+      <div class="focal-marker top">&#9660;</div>
+      <div id="word-display">
+        <span id="word-before"></span>
+        <span id="word-pivot"></span>
+        <span id="word-after"></span>
+      </div>
+      <div class="focal-marker bottom">&#9650;</div>
+    </div>
+
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="word-counter"></div>
+
+    <div id="speed-control">
+      <input type="range" id="speed-slider" min="100" max="1000" value="250" step="10">
+      <span id="speed-label">250 WPM</span>
+    </div>
+
+    <div id="controls">
+      <button id="play-pause-btn">&#9654;</button>
+    </div>
+
+    <div class="reader-nav">
+      <a class="back-link" id="back-from-reader-btn">&larr; Back to Library</a>
+    </div>
+  </div>
+
+  <script type="module">
+    // ── PDF.js Setup ──
+    let pdfjsLib = null;
+    async function loadPdfJs() {
+      if (pdfjsLib) return pdfjsLib;
+      pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+      return pdfjsLib;
+    }
+
+    // ── State ──
+    const state = {
+      library: [],          // Array of document objects
+      activeDocId: null,    // Currently reading doc ID
+      words: [],
+      currentIndex: 0,
+      isPlaying: false,
+      wpm: 250,
+      timerId: null
+    };
+
+    // ── LocalStorage ──
+    const STORAGE_KEY = 'wordrunner_library';
+
+    function loadLibrary() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        state.library = data ? JSON.parse(data) : [];
+      } catch {
+        state.library = [];
+      }
+    }
+
+    function saveLibrary() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.library));
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    // ── ORP Calculation ──
+    function getORPIndex(word) {
+      const len = word.length;
+      if (len <= 1) return 0;
+      if (len <= 5) return 1;
+      if (len <= 9) return 2;
+      if (len <= 13) return 3;
+      return 4;
+    }
+
+    // ── Word Display ──
+    const elBefore = document.getElementById('word-before');
+    const elPivot = document.getElementById('word-pivot');
+    const elAfter = document.getElementById('word-after');
+    const elProgress = document.getElementById('progress-bar');
+    const elCounter = document.getElementById('word-counter');
+
+    function displayWord(word) {
+      const pivotIndex = getORPIndex(word);
+      elBefore.textContent = word.substring(0, pivotIndex);
+      elPivot.textContent = word.charAt(pivotIndex);
+      elAfter.textContent = word.substring(pivotIndex + 1);
+
+      const progress = ((state.currentIndex + 1) / state.words.length) * 100;
+      elProgress.style.width = progress + '%';
+      elCounter.textContent = (state.currentIndex + 1) + ' / ' + state.words.length;
+    }
+
+    function clearDisplay() {
+      elBefore.textContent = '';
+      elPivot.textContent = '';
+      elAfter.textContent = '';
+    }
+
+    // ── Playback ──
+    function play() {
+      if (state.currentIndex >= state.words.length) {
+        pause();
+        return;
+      }
+
+      displayWord(state.words[state.currentIndex]);
+
+      let delay = 60000 / state.wpm;
+
+      const word = state.words[state.currentIndex];
+      if (/[.!?]$/.test(word)) {
+        delay *= 2;
+      } else if (/[,;:]$/.test(word)) {
+        delay *= 1.5;
+      }
+
+      state.currentIndex++;
+      state.timerId = setTimeout(play, delay);
+    }
+
+    function pause() {
+      state.isPlaying = false;
+      clearTimeout(state.timerId);
+      state.timerId = null;
+      updatePlayPauseBtn();
+      saveProgress();
+    }
+
+    function togglePlayPause() {
+      if (state.isPlaying) {
+        pause();
+      } else {
+        if (state.currentIndex >= state.words.length) {
+          state.currentIndex = 0;
+        }
+        state.isPlaying = true;
+        updatePlayPauseBtn();
+        play();
+      }
+    }
+
+    function updatePlayPauseBtn() {
+      const btn = document.getElementById('play-pause-btn');
+      btn.innerHTML = state.isPlaying ? '&#9646;&#9646;' : '&#9654;';
+    }
+
+    // ── Progress Persistence ──
+    function saveProgress() {
+      if (!state.activeDocId) return;
+      const doc = state.library.find(d => d.id === state.activeDocId);
+      if (doc) {
+        doc.currentIndex = state.currentIndex;
+        doc.wpm = state.wpm;
+        saveLibrary();
+      }
+    }
+
+    // ── View Management ──
+    const libraryView = document.getElementById('library-view');
+    const inputView = document.getElementById('input-view');
+    const readerView = document.getElementById('reader-view');
+
+    function showView(view) {
+      libraryView.classList.add('hidden');
+      inputView.classList.add('hidden');
+      readerView.classList.add('hidden');
+      view.classList.remove('hidden');
+    }
+
+    // ── Library Rendering ──
+    function renderLibrary() {
+      const list = document.getElementById('doc-list');
+      list.innerHTML = '';
+
+      if (state.library.length === 0) {
+        list.innerHTML = '<div class="empty-state">No documents yet.<br>Add one to start reading.</div>';
+        return;
+      }
+
+      state.library.forEach(doc => {
+        const pct = doc.totalWords > 0
+          ? Math.round((doc.currentIndex / doc.totalWords) * 100)
+          : 0;
+
+        const item = document.createElement('div');
+        item.className = 'doc-item';
+        item.innerHTML = `
+          <div class="doc-info">
+            <div class="doc-name">${escapeHtml(doc.name)}</div>
+            <div class="doc-meta">${doc.totalWords.toLocaleString()} words &middot; ${pct}% read</div>
+            <div class="doc-progress-bar"><div class="doc-progress-fill" style="width:${pct}%"></div></div>
+          </div>
+          <button class="btn-icon delete-doc-btn" data-id="${doc.id}" title="Delete">&times;</button>
+        `;
+
+        item.querySelector('.doc-info').addEventListener('click', () => {
+          openReader(doc.id);
+        });
+
+        item.querySelector('.delete-doc-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteDoc(doc.id);
+        });
+
+        list.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function deleteDoc(id) {
+      state.library = state.library.filter(d => d.id !== id);
+      saveLibrary();
+      renderLibrary();
+    }
+
+    // ── Open Reader ──
+    function openReader(docId) {
+      const doc = state.library.find(d => d.id === docId);
+      if (!doc) return;
+
+      state.activeDocId = docId;
+      state.words = doc.text.trim().split(/\s+/).filter(w => w.length > 0);
+      state.currentIndex = doc.currentIndex || 0;
+      state.wpm = doc.wpm || 250;
+      state.isPlaying = false;
+
+      document.getElementById('speed-slider').value = state.wpm;
+      document.getElementById('speed-label').textContent = state.wpm + ' WPM';
+
+      if (state.currentIndex < state.words.length) {
+        displayWord(state.words[state.currentIndex]);
+      } else {
+        state.currentIndex = 0;
+        displayWord(state.words[0]);
+      }
+
+      updatePlayPauseBtn();
+      showView(readerView);
+    }
+
+    // ── Add Document ──
+    function addDocument(name, text) {
+      const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+      if (words.length === 0) return null;
+
+      const doc = {
+        id: generateId(),
+        name: name || 'Untitled',
+        text: text.trim(),
+        currentIndex: 0,
+        totalWords: words.length,
+        addedAt: new Date().toISOString().split('T')[0],
+        wpm: 250
+      };
+
+      state.library.push(doc);
+      saveLibrary();
+      return doc;
+    }
+
+    // ── PDF Text Extraction ──
+    async function extractPdfText(arrayBuffer) {
+      const lib = await loadPdfJs();
+      const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
+      let fullText = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+
+      return fullText.trim();
+    }
+
+    // ── Event Listeners ──
+
+    // Add new doc button
+    document.getElementById('add-new-btn').addEventListener('click', () => {
+      document.getElementById('doc-name-input').value = '';
+      document.getElementById('text-input').value = '';
+      document.getElementById('file-input').value = '';
+      document.getElementById('file-name-display').textContent = '';
+      showView(inputView);
+    });
+
+    // Back to library from input
+    document.getElementById('back-to-library-btn').addEventListener('click', () => {
+      renderLibrary();
+      showView(libraryView);
+    });
+
+    // Back to library from reader
+    document.getElementById('back-from-reader-btn').addEventListener('click', () => {
+      pause();
+      renderLibrary();
+      showView(libraryView);
+    });
+
+    // File upload
+    document.getElementById('file-input').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      document.getElementById('file-name-display').textContent = file.name;
+
+      // Auto-fill name from filename
+      const nameInput = document.getElementById('doc-name-input');
+      if (!nameInput.value.trim()) {
+        nameInput.value = file.name.replace(/\.(txt|pdf)$/i, '');
+      }
+
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        document.getElementById('file-name-display').textContent = file.name + ' (extracting text...)';
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const text = await extractPdfText(arrayBuffer);
+          document.getElementById('text-input').value = text;
+          document.getElementById('file-name-display').textContent = file.name + ' (ready)';
+        } catch (err) {
+          document.getElementById('file-name-display').textContent = 'Error reading PDF: ' + err.message;
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          document.getElementById('text-input').value = event.target.result;
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    // Save & start
+    document.getElementById('save-start-btn').addEventListener('click', () => {
+      const name = document.getElementById('doc-name-input').value.trim();
+      const text = document.getElementById('text-input').value;
+
+      if (!text.trim()) return;
+
+      const doc = addDocument(name || 'Untitled', text);
+      if (doc) {
+        openReader(doc.id);
+      }
+    });
+
+    // Play/pause
+    document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
+
+    // Speed slider
+    document.getElementById('speed-slider').addEventListener('input', (e) => {
+      state.wpm = parseInt(e.target.value);
+      document.getElementById('speed-label').textContent = state.wpm + ' WPM';
+    });
+
+    // Keyboard: spacebar
+    document.addEventListener('keydown', (e) => {
+      if (readerView.classList.contains('hidden')) return;
+      if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlayPause();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        if (state.currentIndex > 0) {
+          state.currentIndex = Math.max(0, state.currentIndex - 2);
+          if (!state.isPlaying) {
+            displayWord(state.words[state.currentIndex]);
+            state.currentIndex++;
+          }
+        }
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        if (state.currentIndex < state.words.length && !state.isPlaying) {
+          displayWord(state.words[state.currentIndex]);
+          state.currentIndex++;
+        }
+      }
+    });
+
+    // ── Init ──
+    loadLibrary();
+    renderLibrary();
+
+    // ── PWA Service Worker ──
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
