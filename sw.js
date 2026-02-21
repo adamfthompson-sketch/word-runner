@@ -1,10 +1,11 @@
-const CACHE_NAME = 'wordrunner-v1';
+const CACHE_NAME = 'wordrunner-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './icon.svg'
 ];
 
 // Install: cache app shell
